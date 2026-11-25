@@ -139,4 +139,4 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 Built for the competitive SMP community. Inspired by the Deep Dark, the Warden, and the thrill of hunted progression.
 
-**Star the repo** if you enjoy the plugin! ⭐
+**Star the repo** if you enjoy the plugin! ⭐# trigger
