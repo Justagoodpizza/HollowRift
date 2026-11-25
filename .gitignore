@@ -1,6 +1,6 @@
 # Maven
 target/
-*.jar
+# *.jar (allow HollowRift-1.0.0.jar for GitHub Pages)
 *.war
 *.ear
 *.class
