@@ -92,6 +92,10 @@ public class RiftbladeListener implements Listener {
     }
 
     private void triggerResonance(Player player, LivingEntity target) {
+        // Safety checks
+        if (target == null || !target.isValid() || target.isDead()) return;
+        if (player == null || !player.isValid()) return;
+        
         Location loc = target.getLocation().add(0, target.getHeight() / 2.0, 0);
 
         // Sound & Particles
@@ -100,20 +104,22 @@ public class RiftbladeListener implements Listener {
 
         // Armor-piercing damage: 6.0 extra damage + knockback
         // Use direct health reduction to bypass armor, but clamp at 0.1
-        // Then apply tiny damage for proper kill credit/loot drops
         double currentHealth = target.getHealth();
         double newHealth = Math.max(0.1, currentHealth - 6.0);
+        
+        // Check if this would kill the target
+        boolean wouldKill = newHealth <= 0.1;
         target.setHealth(newHealth);
         
-        // If this would kill, apply tiny damage for kill credit
-        if (newHealth <= 0.1) {
-            target.damage(0.1, player);
-        }
-
-        // Apply knockback away from player
+        // Apply knockback away from player (even if dead, for effect)
         Vector knockback = target.getLocation().toVector().subtract(player.getLocation().toVector()).normalize().multiply(0.8);
         knockback.setY(0.4);
         target.setVelocity(target.getVelocity().add(knockback));
+
+        // If this would kill, apply tiny damage for kill credit/loot
+        if (wouldKill && target.isValid() && !target.isDead()) {
+            target.damage(0.1, player);
+        }
 
         // Visual feedback to player
         player.sendActionBar(Component.text("⚡ Resonance Boom!", NamedTextColor.AQUA, TextDecoration.BOLD));
@@ -274,18 +280,24 @@ public class RiftbladeListener implements Listener {
             for (Entity entity : checkLoc.getWorld().getNearbyEntities(checkLoc, PHASE_SLASH_RADIUS, PHASE_SLASH_RADIUS, PHASE_SLASH_RADIUS)) {
                 if (entity instanceof LivingEntity living 
                     && !entity.equals(player) 
-                    && !entity.hasMetadata("NPC")) {
+                    && !entity.hasMetadata("NPC")
+                    && living.isValid()
+                    && !living.isDead()) {
                     
                     // Apply damage
                     living.damage(PHASE_SLASH_DAMAGE, player);
                     
-                    // Small knockback
-                    Vector kb = entity.getLocation().toVector().subtract(checkLoc.toVector()).normalize().multiply(0.5);
-                    kb.setY(0.3);
-                    living.setVelocity(living.getVelocity().add(kb));
+                    // Small knockback (only if still valid after damage)
+                    if (living.isValid() && !living.isDead()) {
+                        Vector kb = entity.getLocation().toVector().subtract(checkLoc.toVector()).normalize().multiply(0.5);
+                        kb.setY(0.3);
+                        living.setVelocity(living.getVelocity().add(kb));
+                    }
                     
                     // Particle on hit
-                    entity.getWorld().spawnParticle(Particle.SCULK_SOUL, entity.getLocation().add(0, 1, 0), 5, 0.3, 0.3, 0.3, 0.1);
+                    if (entity.isValid()) {
+                        entity.getWorld().spawnParticle(Particle.SCULK_SOUL, entity.getLocation().add(0, 1, 0), 5, 0.3, 0.3, 0.3, 0.1);
+                    }
                 }
             }
         }
