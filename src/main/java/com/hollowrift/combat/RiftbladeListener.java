@@ -182,6 +182,8 @@ public class RiftbladeListener implements Listener {
             Location start = player.getLocation().clone();
             Vector direction = player.getLocation().getDirection().normalize();
             
+            plugin.getLogger().info("Phase Slash executed by " + player.getName() + " direction: " + direction);
+            
             // If looking straight up/down, don't dash
             if (Math.abs(direction.getY()) > 0.9) {
                 player.sendActionBar(Component.text("❌ Can't dash straight up/down!", NamedTextColor.RED));
@@ -200,6 +202,8 @@ public class RiftbladeListener implements Listener {
             final Vector dashVelocity = direction.clone().multiply(speed);
             dashVelocity.setY(0.2); // Small upward boost
             
+            plugin.getLogger().info("Phase Slash dash velocity: " + dashVelocity + " speed: " + speed);
+            
             // Cancel any existing velocity
             player.setVelocity(new Vector(0, 0, 0));
             player.setFallDistance(0);
@@ -214,11 +218,13 @@ public class RiftbladeListener implements Listener {
                     try {
                         // Safety checks
                         if (player == null || !player.isValid() || !player.isOnline() || ticks[0] >= 10) {
+                            plugin.getLogger().info("Phase Slash dash ended after " + ticks[0] + " ticks");
                             cancel();
                             return;
                         }
                         
                         // Apply velocity
+                        plugin.getLogger().info("Applying dash velocity tick " + ticks[0] + ": " + finalDashVelocity);
                         player.setVelocity(finalDashVelocity);
                         player.setFallDistance(0);
                         
