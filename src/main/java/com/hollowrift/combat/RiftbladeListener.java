@@ -184,22 +184,29 @@ public class RiftbladeListener implements Listener {
         // Safe vertical boost: find safe Y at destination
         end = findSafeDestination(start, end);
 
-        // Calculate dash velocity - use direction vector directly for consistent dash
-        Vector dashVelocity = direction.clone().multiply(PHASE_SLASH_DASH_DISTANCE / 0.5); // velocity per tick
-        
-        // Preserve some vertical momentum if jumping, otherwise give upward boost
-        if (player.getVelocity().getY() > 0) {
-            dashVelocity.setY(player.getVelocity().getY());
-        } else {
-            dashVelocity.setY(0.5); // Upward boost to clear ground
-        }
-        
-        // Apply velocity - bypass movement checks
-        player.setVelocity(dashVelocity);
-        player.setFallDistance(0); // Prevent fall damage
+        // Dash parameters: 8 blocks over 10 ticks = 0.8 blocks/tick
+        final int dashTicks = 10;
+        final double speed = PHASE_SLASH_DASH_DISTANCE / dashTicks; // 0.8 blocks/tick
+        final Vector dashVelocity = direction.clone().multiply(speed);
+        dashVelocity.setY(0.3); // Small upward boost
 
-        // Debug feedback
-        player.sendActionBar(Component.text("⚔ Phase Slash! Velocity: " + String.format("%.1f", dashVelocity.length()), NamedTextColor.DARK_AQUA, TextDecoration.BOLD));
+        // Dash over multiple ticks using a runnable
+        new BukkitRunnable() {
+            int ticks = 0;
+            @Override
+            public void run() {
+                if (!player.isValid() || !player.isOnline() || ticks >= dashTicks) {
+                    cancel();
+                    return;
+                }
+                
+                // Apply velocity each tick
+                player.setVelocity(dashVelocity);
+                player.setFallDistance(0); // Prevent fall damage
+                
+                ticks++;
+            }
+        }.runTaskTimer(plugin, 0L, 1L); // Every tick
 
         // Spawn SCULK_SOUL particles along path
         spawnPathParticles(start, end);
@@ -213,6 +220,8 @@ public class RiftbladeListener implements Listener {
         // Sound feedback
         start.getWorld().playSound(start, Sound.ENTITY_ENDERMAN_TELEPORT, 1.0f, 1.2f);
         end.getWorld().playSound(end, Sound.ENTITY_ENDERMAN_TELEPORT, 1.0f, 0.8f);
+
+        player.sendActionBar(Component.text("⚔ Phase Slash!", NamedTextColor.DARK_AQUA, TextDecoration.BOLD));
     }
 
     /**
