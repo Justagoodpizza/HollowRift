@@ -173,20 +173,27 @@ public class RiftbladeListener implements Listener {
         Vector direction = player.getLocation().getDirection().normalize();
         
         // Calculate end position (8 blocks forward)
-        Location end = start.clone().add(direction.multiply(PHASE_SLASH_DASH_DISTANCE));
+        Location end = start.clone().add(direction.clone().multiply(PHASE_SLASH_DASH_DISTANCE));
 
         // Safe vertical boost: find safe Y at destination
         end = findSafeDestination(start, end);
 
-        // Dash the player
-        Vector dashVelocity = end.toVector().subtract(start.toVector());
-        // Preserve some vertical momentum if jumping
+        // Calculate dash velocity - use direction vector directly for consistent dash
+        Vector dashVelocity = direction.clone().multiply(PHASE_SLASH_DASH_DISTANCE / 0.5); // velocity per tick
+        
+        // Preserve some vertical momentum if jumping, otherwise give upward boost
         if (player.getVelocity().getY() > 0) {
             dashVelocity.setY(player.getVelocity().getY());
         } else {
-            dashVelocity.setY(0.3); // Small upward boost to clear ground
+            dashVelocity.setY(0.5); // Upward boost to clear ground
         }
+        
+        // Apply velocity - bypass movement checks
         player.setVelocity(dashVelocity);
+        player.setFallDistance(0); // Prevent fall damage
+
+        // Debug feedback
+        player.sendActionBar(Component.text("⚔ Phase Slash! Velocity: " + String.format("%.1f", dashVelocity.length()), NamedTextColor.DARK_AQUA, TextDecoration.BOLD));
 
         // Spawn SCULK_SOUL particles along path
         spawnPathParticles(start, end);
@@ -200,8 +207,6 @@ public class RiftbladeListener implements Listener {
         // Sound feedback
         start.getWorld().playSound(start, Sound.ENTITY_ENDERMAN_TELEPORT, 1.0f, 1.2f);
         end.getWorld().playSound(end, Sound.ENTITY_ENDERMAN_TELEPORT, 1.0f, 0.8f);
-
-        player.sendActionBar(Component.text("⚔ Phase Slash!", NamedTextColor.DARK_AQUA, TextDecoration.BOLD));
     }
 
     /**

@@ -427,13 +427,22 @@ public class HollowWardenBoss {
         int coreCount = 1 + ThreadLocalRandom.current().nextInt(2); // 1 or 2
         ItemManager itemManager = plugin.getItemManager();
         
-        for (int i = 0; i < coreCount; i++) {
-            Location dropLoc = warden.getLocation().add(
-                    ThreadLocalRandom.current().nextDouble(-1, 1),
-                    1,
-                    ThreadLocalRandom.current().nextDouble(-1, 1)
-            );
-            warden.getWorld().dropItemNaturally(dropLoc, itemManager.createEchoingCore());
+        if (itemManager == null) {
+            plugin.getLogger().severe("ItemManager is null! Cannot drop Echoing Cores.");
+        } else {
+            for (int i = 0; i < coreCount; i++) {
+                Location dropLoc = warden.getLocation().add(
+                        ThreadLocalRandom.current().nextDouble(-1, 1),
+                        1,
+                        ThreadLocalRandom.current().nextDouble(-1, 1)
+                );
+                ItemStack core = itemManager.createEchoingCore();
+                if (core != null) {
+                    warden.getWorld().dropItemNaturally(dropLoc, core);
+                } else {
+                    plugin.getLogger().warning("createEchoingCore() returned null!");
+                }
+            }
         }
         
         // Broadcast death message
