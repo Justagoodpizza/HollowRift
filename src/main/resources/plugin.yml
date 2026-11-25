@@ -1,0 +1,27 @@
+name: HollowRift
+version: ${project.version}
+main: com.hollowrift.HollowRift
+api-version: '26.3'
+load: STARTUP
+author: HollowRift Team
+description: A competitive survival SMP plugin featuring custom items, boss battles, and altar summoning
+website: https://github.com/your-repo/hollowrift
+
+commands:
+  hollowrift:
+    description: Main HollowRift admin command
+    usage: /hollowrift <give|spawnboss> [args]
+    permission: hollowrift.admin
+    permission-message: "<red>You don't have permission to use this command."
+    aliases: [hr]
+
+permissions:
+  hollowrift.admin:
+    description: Access to all HollowRift admin commands
+    default: op
+  hollowrift.give:
+    description: Ability to give custom items
+    default: op
+  hollowrift.spawnboss:
+    description: Ability to spawn the Hollow Warden boss
+    default: op

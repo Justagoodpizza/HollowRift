@@ -1,0 +1,1882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="HollowRift - Competitive Survival SMP Plugin for Paper 1.21.4+. Custom items, boss battles, altar summoning, and server-wide tracking.">
+    <meta name="theme-color" content="#1a1a2e">
+    <title>HollowRift | Competitive Survival SMP Plugin</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        :root {
+            --mc-dark: #0d0d1a;
+            --mc-darker: #05050a;
+            --mc-card: #16162e;
+            --mc-border: #2a2a4a;
+            --mc-gold: #ffd700;
+            --mc-gold-dim: #c9a800;
+            --mc-aqua: #00ffff;
+            --mc-aqua-dim: #00b3b3;
+            --mc-dark-aqua: #00aaaa;
+            --mc-dark-purple: #aa00aa;
+            --mc-red: #ff5555;
+            --mc-green: #55ff55;
+            --mc-gray: #aaaaaa;
+            --mc-dark-gray: #555555;
+            --text-primary: #ffffff;
+            --text-secondary: #cccccc;
+            --text-muted: #888888;
+            --shadow: rgba(0, 0, 0, 0.5);
+            --glow-gold: rgba(255, 215, 0, 0.4);
+            --glow-aqua: rgba(0, 255, 255, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--mc-dark);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .font-minecraft {
+            font-family: 'Press Start 2P', cursive;
+        }
+
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Animated Background */
+        .bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Noise overlay */
+        .noise-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.03;
+            pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--mc-darker);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--mc-border);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--mc-gray);
+        }
+
+        /* Utility Classes */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        .section {
+            padding: 100px 0;
+            position: relative;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .section-badge {
+            display: inline-block;
+            padding: 8px 20px;
+            background: linear-gradient(135deg, var(--mc-gold), var(--mc-gold-dim));
+            color: var(--mc-dark);
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            border-radius: 4px;
+            margin-bottom: 16px;
+            box-shadow: 0 0 20px var(--glow-gold);
+        }
+
+        .section-title {
+            font-family: 'Press Start 2P', cursive;
+            font-size: clamp(28px, 5vw, 48px);
+            line-height: 1.2;
+            background: linear-gradient(135deg, var(--text-primary), var(--mc-aqua));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 16px;
+        }
+
+        .section-subtitle {
+            font-size: 18px;
+            color: var(--text-secondary);
+            max-width: 700px;
+            margin: 0 auto;
+            line-height: 1.7;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 32px;
+            border: none;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--mc-gold), var(--mc-gold-dim));
+            color: var(--mc-dark);
+            box-shadow: 0 4px 20px var(--glow-gold);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px var(--glow-gold);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--mc-aqua);
+            border: 2px solid var(--mc-aqua);
+        }
+
+        .btn-secondary:hover {
+            background: var(--mc-aqua);
+            color: var(--mc-dark);
+            box-shadow: 0 0 20px var(--glow-aqua);
+        }
+
+        .btn-download {
+            background: linear-gradient(135deg, var(--mc-dark-purple), #880088);
+            color: white;
+            box-shadow: 0 4px 20px rgba(170, 0, 170, 0.4);
+        }
+
+        .btn-download:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(170, 0, 170, 0.5);
+        }
+
+        .card {
+            background: var(--mc-card);
+            border: 1px solid var(--mc-border);
+            border-radius: 8px;
+            padding: 32px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--mc-gold), var(--mc-aqua), var(--mc-dark-purple));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: var(--mc-aqua);
+            box-shadow: 0 20px 40px var(--shadow);
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .grid {
+            display: grid;
+            gap: 24px;
+        }
+
+        .grid-2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+        .grid-3 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+        .grid-4 { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+
+        /* Navigation */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: rgba(13, 13, 26, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--mc-border);
+            padding: 16px 0;
+            transition: all 0.3s ease;
+        }
+
+        .navbar.scrolled {
+            box-shadow: 0 4px 30px var(--shadow);
+        }
+
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--text-primary);
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--mc-dark-purple), var(--mc-aqua));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .logo-text {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 18px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--mc-gold), var(--mc-aqua));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 14px;
+            transition: color 0.3s ease;
+            position: relative;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--mc-aqua);
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--mc-aqua);
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .nav-cta {
+            display: none;
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding-top: 80px;
+            position: relative;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(170, 0, 170, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(0, 170, 170, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(255, 215, 0, 0.05) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .hero-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: rgba(170, 0, 170, 0.2);
+            border: 1px solid var(--mc-dark-purple);
+            border-radius: 50px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--mc-aqua);
+            margin-bottom: 24px;
+        }
+
+        .hero-badge span {
+            background: var(--mc-dark-purple);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 10px;
+        }
+
+        .hero h1 {
+            font-family: 'Press Start 2P', cursive;
+            font-size: clamp(32px, 6vw, 64px);
+            line-height: 1.1;
+            margin-bottom: 24px;
+        }
+
+        .hero h1 .highlight {
+            background: linear-gradient(135deg, var(--mc-gold), var(--mc-aqua), var(--mc-dark-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 20px;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            margin-bottom: 32px;
+            max-width: 500px;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 40px;
+        }
+
+        .hero-stats {
+            display: flex;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 32px;
+            background: linear-gradient(135deg, var(--mc-gold), var(--mc-aqua));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .hero-visual {
+            position: relative;
+        }
+
+        .hero-visual .floating-card {
+            position: absolute;
+            background: var(--mc-card);
+            border: 1px solid var(--mc-border);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 20px 50px var(--shadow);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .hero-visual .card-1 {
+            top: 10%;
+            right: 10%;
+            width: 280px;
+            animation-delay: 0s;
+        }
+
+        .hero-visual .card-2 {
+            top: 50%;
+            left: 5%;
+            width: 260px;
+            animation-delay: 2s;
+        }
+
+        .hero-visual .card-3 {
+            bottom: 10%;
+            right: 5%;
+            width: 300px;
+            animation-delay: 4s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(1deg); }
+        }
+
+        .item-preview {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: var(--mc-darker);
+            border-radius: 8px;
+            margin-bottom: 12px;
+            border: 1px solid var(--mc-border);
+        }
+
+        .item-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            background: linear-gradient(135deg, var(--mc-border), var(--mc-card));
+        }
+
+        .item-info h4 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .item-info .item-type {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .item-info .item-ability {
+            font-size: 10px;
+            color: var(--mc-aqua);
+            margin-top: 4px;
+        }
+
+        /* Features Section */
+        .features {
+            background: linear-gradient(180deg, var(--mc-dark) 0%, var(--mc-darker) 100%);
+        }
+
+        .feature-card {
+            text-align: center;
+        }
+
+        .feature-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            margin: 0 auto 24px;
+            position: relative;
+        }
+
+        .feature-icon.item { background: linear-gradient(135deg, #ffd700, #ffaa00); }
+        .feature-icon.sword { background: linear-gradient(135deg, #00ffff, #0088aa); }
+        .feature-icon.boss { background: linear-gradient(135deg, #aa00aa, #880088); }
+        .feature-icon.altar { background: linear-gradient(135deg, #55ff55, #33cc33); }
+        .feature-icon.tracking { background: linear-gradient(135deg, #ff5555, #cc3333); }
+        .feature-icon.api { background: linear-gradient(135deg, #aaaaaa, #888888); }
+
+        .feature-icon::after {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 20px;
+            background: inherit;
+            filter: blur(20px);
+            opacity: 0.5;
+            z-index: -1;
+        }
+
+        .feature-card h3 {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 18px;
+            margin-bottom: 12px;
+        }
+
+        .feature-card p {
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        .feature-tags {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            padding: 6px 12px;
+            background: var(--mc-darker);
+            border: 1px solid var(--mc-border);
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        .tag.gold { border-color: var(--mc-gold); color: var(--mc-gold); }
+        .tag.aqua { border-color: var(--mc-aqua); color: var(--mc-aqua); }
+        .tag.purple { border-color: var(--mc-dark-purple); color: var(--mc-dark-purple); }
+        .tag.green { border-color: var(--mc-green); color: var(--mc-green); }
+        .tag.red { border-color: var(--mc-red); color: var(--mc-red); }
+
+        /* How It Works */
+        .how-it-works {
+            background: var(--mc-dark);
+        }
+
+        .step {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 32px;
+            padding: 40px 0;
+            border-bottom: 1px solid var(--mc-border);
+        }
+
+        .step:last-child {
+            border-bottom: none;
+        }
+
+        .step-number {
+            width: 80px;
+            height: 80px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, var(--mc-dark-purple), var(--mc-aqua));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 32px;
+            color: var(--mc-dark);
+            flex-shrink: 0;
+            box-shadow: 0 0 30px rgba(170, 0, 170, 0.3);
+        }
+
+        .step-content h3 {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 22px;
+            margin-bottom: 12px;
+        }
+
+        .step-content p {
+            color: var(--text-secondary);
+            font-size: 16px;
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .step-details {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .detail-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--mc-card);
+            border: 1px solid var(--mc-border);
+            border-radius: 8px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .detail-item i {
+            color: var(--mc-aqua);
+        }
+
+        /* Installation */
+        .installation {
+            background: linear-gradient(180deg, var(--mc-darker) 0%, var(--mc-dark) 100%);
+        }
+
+        .install-tabs {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            background: var(--mc-card);
+            border: 1px solid var(--mc-border);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn:hover,
+        .tab-btn.active {
+            background: linear-gradient(135deg, var(--mc-dark-purple), var(--mc-aqua));
+            border-color: transparent;
+            color: var(--mc-dark);
+        }
+
+        .tab-panel {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .code-block {
+            background: var(--mc-darker);
+            border: 1px solid var(--mc-border);
+            border-radius: 8px;
+            overflow: hidden;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: var(--mc-card);
+            border-bottom: 1px solid var(--mc-border);
+        }
+
+        .code-header .dots {
+            display: flex;
+            gap: 6px;
+        }
+
+        .code-header .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .code-header .dot:nth-child(1) { background: #ff5f56; }
+        .code-header .dot:nth-child(2) { background: #ffbd2e; }
+        .code-header .dot:nth-child(3) { background: #27c93f; }
+
+        .code-header .filename {
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .code-content {
+            padding: 20px;
+            overflow-x: auto;
+        }
+
+        .code-line {
+            color: var(--text-secondary);
+        }
+
+        .code-line .keyword { color: #c792ea; }
+        .code-line .string { color: #ecc48d; }
+        .code-line .comment { color: #546e7a; }
+        .code-line .function { color: #82aaff; }
+        .code-line .number { color: #f78c6c; }
+
+        .install-steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+            margin-top: 40px;
+        }
+
+        .install-step {
+            text-align: center;
+            padding: 32px;
+        }
+
+        .install-step .step-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--mc-gold), var(--mc-gold-dim));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: var(--mc-dark);
+            margin: 0 auto 16px;
+        }
+
+        .install-step h4 {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .install-step p {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        /* Why Choose */
+        .why-choose {
+            background: var(--mc-dark);
+        }
+
+        .reason-card {
+            display: flex;
+            gap: 24px;
+            padding: 32px;
+        }
+
+        .reason-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .reason-icon.competitive { background: linear-gradient(135deg, var(--mc-gold), var(--mc-gold-dim)); }
+        .reason-icon.custom { background: linear-gradient(135deg, var(--mc-aqua), var(--mc-dark-aqua)); }
+        .reason-icon.boss { background: linear-gradient(135deg, var(--mc-dark-purple), #880088); }
+        .reason-icon.tech { background: linear-gradient(135deg, var(--mc-green), #33aa33); }
+        .reason-icon.active { background: linear-gradient(135deg, var(--mc-red), #cc3333); }
+        .reason-icon.community { background: linear-gradient(135deg, #ff8800, #cc6600); }
+
+        .reason-content h3 {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+
+        .reason-content p {
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
+        /* Commands Reference */
+        .commands {
+            background: linear-gradient(180deg, var(--mc-darker) 0%, var(--mc-dark) 100%);
+        }
+
+        .command-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--mc-card);
+            border: 1px solid var(--mc-border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .command-table th,
+        .command-table td {
+            padding: 16px 20px;
+            text-align: left;
+            border-bottom: 1px solid var(--mc-border);
+        }
+
+        .command-table th {
+            background: var(--mc-darker);
+            font-family: 'Press Start 2P', cursive;
+            font-size: 12px;
+            color: var(--mc-gold);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .command-table td:first-child {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--mc-darker);
+            color: var(--mc-aqua);
+        }
+
+        .command-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .command-table tr:hover td {
+            background: rgba(255, 215, 0, 0.05);
+        }
+
+        .permission-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            background: var(--mc-darker);
+            border: 1px solid var(--mc-border);
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--mc-darker);
+            border-top: 1px solid var(--mc-border);
+            padding: 60px 0 30px;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .footer-brand .logo {
+            margin-bottom: 16px;
+        }
+
+        .footer-brand p {
+            color: var(--text-muted);
+            font-size: 14px;
+            line-height: 1.7;
+            max-width: 300px;
+        }
+
+        .footer-links h4 {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 14px;
+            margin-bottom: 20px;
+            color: var(--mc-gold);
+        }
+
+        .footer-links ul {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 12px;
+        }
+
+        .footer-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            color: var(--mc-aqua);
+        }
+
+        .footer-bottom {
+            padding-top: 30px;
+            border-top: 1px solid var(--mc-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .footer-bottom p {
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 16px;
+        }
+
+        .social-links a {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: var(--mc-card);
+            border: 1px solid var(--mc-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+        }
+
+        .social-links a:hover {
+            background: var(--mc-dark-purple);
+            border-color: var(--mc-dark-purple);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        /* Responsive */
+        @media (max-width: 968px) {
+            .hero-content {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+
+            .hero-buttons {
+                justify-content: center;
+            }
+
+            .hero-stats {
+                justify-content: center;
+            }
+
+            .hero-visual {
+                display: none;
+            }
+
+            .nav-links {
+                position: fixed;
+                top: 72px;
+                left: 0;
+                right: 0;
+                background: var(--mc-darker);
+                flex-direction: column;
+                padding: 24px;
+                gap: 16px;
+                border-bottom: 1px solid var(--mc-border);
+                transform: translateY(-100%);
+                opacity: 0;
+                visibility: hidden;
+                transition: all 0.3s ease;
+            }
+
+            .nav-links.active {
+                transform: translateY(0);
+                opacity: 1;
+                visibility: visible;
+            }
+
+            .mobile-menu-btn {
+                display: block;
+            }
+
+            .step {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+
+            .step-number {
+                margin: 0 auto;
+            }
+
+            .step-details {
+                justify-content: center;
+            }
+
+            .reason-card {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .reason-icon {
+                margin: 0 auto;
+            }
+
+            .footer-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .footer-brand {
+                grid-column: span 2;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .section {
+                padding: 60px 0;
+            }
+
+            .footer-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .footer-brand {
+                grid-column: auto;
+            }
+
+            .footer-bottom {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .hero h1 {
+                font-size: 28px;
+            }
+
+            .hero p {
+                font-size: 16px;
+            }
+
+            .section-title {
+                font-size: 20px;
+            }
+
+            .command-table {
+                font-size: 12px;
+            }
+
+            .command-table th,
+            .command-table td {
+                padding: 12px;
+            }
+        }
+
+        /* Animations */
+        .fade-up {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.6s ease;
+        }
+
+        .fade-up.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .stagger-1 { transition-delay: 100ms; }
+        .stagger-2 { transition-delay: 200ms; }
+        .stagger-3 { transition-delay: 300ms; }
+        .stagger-4 { transition-delay: 400ms; }
+        .stagger-5 { transition-delay: 500ms; }
+        .stagger-6 { transition-delay: 600ms; }
+    </style>
+</head>
+<body>
+    <!-- Background Canvas -->
+    <canvas class="bg-canvas" id="bgCanvas"></canvas>
+    <div class="noise-overlay"></div>
+
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="#" class="logo">
+                <div class="logo-icon"><i class="fas fa-skull-crossbones"></i></div>
+                <span class="logo-text">HollowRift</span>
+            </a>
+            <ul class="nav-links" id="navLinks">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#how-it-works">How It Works</a></li>
+                <li><a href="#installation">Installation</a></li>
+                <li><a href="#why-choose">Why Choose</a></li>
+                <li><a href="#commands">Commands</a></li>
+            </ul>
+            <a href="#download" class="btn btn-primary nav-cta">
+                <i class="fas fa-download"></i> Download
+            </a>
+            <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-text">
+                    <div class="hero-badge">
+                        <span>v1.0.0</span> Paper 1.21.4+ • Java 21
+                    </div>
+                    <h1>Hollow<span class="highlight">Rift</span></h1>
+                    <p>The ultimate competitive survival SMP plugin. Forge the Riftblade, summon the Hollow Warden, and fight for dominance in a world where every 5 minutes your location is hunted.</p>
+                    <div class="hero-buttons">
+                        <a href="#download" class="btn btn-download">
+                            <i class="fas fa-download"></i> Download Latest
+                        </a>
+                        <a href="#features" class="btn btn-secondary">
+                            <i class="fas fa-info-circle"></i> View Features
+                        </a>
+                    </div>
+                    <div class="hero-stats">
+                        <div class="stat">
+                            <span class="stat-number">4</span>
+                            <span class="stat-label">Major Systems</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-number">2</span>
+                            <span class="stat-label">Custom Items</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-number">3</span>
+                            <span class="stat-label">Boss Phases</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-number">∞</span>
+                            <span class="stat-label">Replayability</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="hero-visual">
+                    <div class="floating-card card-1">
+                        <div class="item-preview">
+                            <div class="item-icon" style="background: linear-gradient(135deg, #00ffff, #0088aa);">
+                                <i class="fas fa-gem"></i>
+                            </div>
+                            <div class="item-info">
+                                <h4 style="color: #00ffff;">Echoing Core</h4>
+                                <div class="item-type">Echo Shard • PDC: hollowrift:echoing_core</div>
+                                <div class="item-ability">⚡ Glowing • Crafts Riftblade</div>
+                            </div>
+                        </div>
+                        <div class="item-preview">
+                            <div class="item-icon" style="background: linear-gradient(135deg, #ffd700, #ffaa00);">
+                                <i class="fas fa-sword"></i>
+                            </div>
+                            <div class="item-info">
+                                <h4 style="color: #ffd700;">Riftblade</h4>
+                                <div class="item-type">Netherite Sword • Sharpness V</div>
+                                <div class="item-ability">🗡️ Resonance Stacks • Phase Slash</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="floating-card card-2">
+                        <div class="item-preview">
+                            <div class="item-icon" style="background: linear-gradient(135deg, #aa00aa, #880088);">
+                                <i class="fas fa-skull"></i>
+                            </div>
+                            <div class="item-info">
+                                <h4 style="color: #aa00aa;">The Hollow Warden</h4>
+                                <div class="item-type">600 HP • BossBar • Persistent</div>
+                                <div class="item-ability">🛡️ Sonic Shield • 🌊 Vibration Slam • 🔗 Soul Tether</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="floating-card card-3">
+                        <div class="item-preview">
+                            <div class="item-icon" style="background: linear-gradient(135deg, #55ff55, #33cc33);">
+                                <i class="fas fa-ghost"></i>
+                            </div>
+                            <div class="item-info">
+                                <h4 style="color: #55ff55;">Altar Ritual</h4>
+                                <div class="item-type">Sculk Shrieker + 4 Chiseled Deepslate</div>
+                                <div class="item-ability">⚡ Soul Lantern → Cosmic Lightning → Boss Spawn</div>
+                            </div>
+                        </div>
+                        <div class="item-preview">
+                            <div class="item-icon" style="background: linear-gradient(135deg, #ff5555, #cc3333);">
+                                <i class="fas fa-satellite-dish"></i>
+                            </div>
+                            <div class="item-info">
+                                <h4 style="color: #ff5555;">Riftblade Ping</h4>
+                                <div class="item-type">Every 5 minutes • Rounded to 250 blocks</div>
+                                <div class="item-ability">📡 World + Approximate Coordinates</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features section" id="features">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-badge">Core Features</span>
+                <h2 class="section-title font-minecraft">Everything Included</h2>
+                <p class="section-subtitle">Five interconnected systems that create emergent gameplay — no two encounters are the same.</p>
+            </div>
+            <div class="grid grid-3">
+                <div class="card feature-card fade-up stagger-1">
+                    <div class="feature-icon item"><i class="fas fa-gem"></i></div>
+                    <h3>Custom Items</h3>
+                    <p>Two unique items with PersistentDataContainer identification. Echoing Core (glowing Echo Shard) and Riftblade (Netherite Sword with Sharpness V, Unbreaking III, Mending).</p>
+                    <div class="feature-tags">
+                        <span class="tag gold">PDC Identified</span>
+                        <span class="tag gold">Vanilla-Proof</span>
+                        <span class="tag gold">Custom Recipe</span>
+                    </div>
+                </div>
+                <div class="card feature-card fade-up stagger-2">
+                    <div class="feature-icon sword"><i class="fas fa-sword"></i></div>
+                    <h3>Riftblade Combat</h3>
+                    <p>Passive Resonance Stacks build on consecutive hits (every 3rd = sonic boom + 6 armor-piercing damage). Active Phase Slash dashes 8 blocks, damages enemies in path, grants Speed II.</p>
+                    <div class="feature-tags">
+                        <span class="tag aqua">15s Cooldown</span>
+                        <span class="tag aqua">Action Bar UI</span>
+                        <span class="tag aqua">Armor-Piercing</span>
+                    </div>
+                </div>
+                <div class="card feature-card fade-up stagger-3">
+                    <div class="feature-icon boss"><i class="fas fa-skull"></i></div>
+                    <h3>Hollow Warden Boss</h3>
+                    <p>600 HP Warden with 3-phase fight: Sonic Shield (90% melee reduction, 3 nodes), Vibration Slam (≤50% HP, launches grounded players), Soul Tether (≤20% HP, heals while players stay close).</p>
+                    <div class="feature-tags">
+                        <span class="tag purple">3 Phases</span>
+                        <span class="tag purple">BossBar</span>
+                        <span class="tag purple">1-2 Core Drops</span>
+                    </div>
+                </div>
+                <div class="card feature-card fade-up stagger-4">
+                    <div class="feature-icon altar"><i class="fas fa-ghost"></i></div>
+                    <h3>Altar Summoning</h3>
+                    <p>Player-driven ritual: Sculk Shrieker centered with 4 Chiseled Deepslate at cardinal directions (2 blocks out). Right-click with Soul Lantern → consumes item, lightning, broadcasts coords, spawns boss.</p>
+                    <div class="feature-tags">
+                        <span class="tag green">No Commands</span>
+                        <span class="tag green">Server Broadcast</span>
+                        <span class="tag green">PvP Hotspot</span>
+                    </div>
+                </div>
+                <div class="card feature-card fade-up stagger-5">
+                    <div class="feature-icon tracking"><i class="fas fa-satellite-dish"></i></div>
+                    <h3>Competitive Tracking</h3>
+                    <p>Every 5 minutes, players holding a Riftblade (inventory or Ender Chest) ping their rough location to the entire server — world name + coordinates rounded to nearest 250 blocks.</p>
+                    <div class="feature-tags">
+                        <span class="tag red">5 Min Interval</span>
+                        <span class="tag red">250 Block Radius</span>
+                        <span class="tag red">Ender Chest Check</span>
+                    </div>
+                </div>
+                <div class="card feature-card fade-up stagger-6">
+                    <div class="feature-icon api"><i class="fas fa-code"></i></div>
+                    <h3>Modern Architecture</h3>
+                    <p>Built for Paper 1.21.4+ (26.3+) with Java 21. Uses Adventure API for components, PDC for items, BukkitRunnables for timers. Clean modular structure — easy to extend or disable features.</p>
+                    <div class="feature-tags">
+                        <span class="tag">No NMS</span>
+                        <span class="tag">Shaded JAR</span>
+                        <span class="tag">MIT License</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="how-it-works section" id="how-it-works">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-badge">Gameplay Loop</span>
+                <h2 class="section-title font-minecraft">How It Works</h2>
+                <p class="section-subtitle">From gathering resources to server-wide boss hunts — the complete progression path.</p>
+            </div>
+            
+            <div class="step fade-up stagger-1">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h3>Explore & Gather</h3>
+                    <p>Venture into the Deep Dark to collect Echo Shards and Breeze Rods. Hunt the Warden for more shards, or explore Trial Chambers for Breeze Rods.</p>
+                    <div class="step-details">
+                        <div class="detail-item"><i class="fas fa-gem"></i> Echo Shards</div>
+                        <div class="detail-item"><i class="fas fa-wind"></i> Breeze Rods</div>
+                        <div class="detail-item"><i class="fas fa-skull"></i> Warden Loot</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="step fade-up stagger-2">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h3>Forge the Riftblade</h3>
+                    <p>Craft an Echoing Core (glowing Echo Shard), then combine with Netherite Sword, 2 Echo Shards, and 2 Breeze Rods in a custom shaped recipe to create the Riftblade.</p>
+                    <div class="step-details">
+                        <div class="detail-item"><i class="fas fa-gem"></i> 1 Echoing Core</div>
+                        <div class="detail-item"><i class="fas fa-sword"></i> 1 Netherite Sword</div>
+                        <div class="detail-item"><i class="fas fa-gem"></i> 2 Echo Shards</div>
+                        <div class="detail-item"><i class="fas fa-wind"></i> 2 Breeze Rods</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="step fade-up stagger-3">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h3>Build an Altar or Spawn</h3>
+                    <p>Either use <code>/hollowrift spawnboss</code> (admin) or build the ritual: place a Sculk Shrieker, surround with 4 Chiseled Deepslate at N/S/E/W (2 blocks out), right-click with Soul Lantern.</p>
+                    <div class="step-details">
+                        <div class="detail-item"><i class="fas fa-ghost"></i> Sculk Shrieker Center</div>
+                        <div class="detail-item"><i class="fas fa-cube"></i> 4 Chiseled Deepslate</div>
+                        <div class="detail-item"><i class="fas fa-lantern"></i> Soul Lantern</div>
+                        <div class="detail-item"><i class="fas fa-bolt"></i> Cosmic Lightning</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="step fade-up stagger-4">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                    <h3>Fight the Hollow Warden</h3>
+                    <p>Coordinate with your team: break 3 shield nodes to drop the Sonic Shield (90% melee reduction), dodge Vibration Slams (every 12s below 50% HP), break Soul Tethers (below 20% HP) by moving 15+ blocks away.</p>
+                    <div class="step-details">
+                        <div class="detail-item"><i class="fas fa-shield-alt"></i> Break 3 Nodes</div>
+                        <div class="detail-item"><i class="fas fa-wave-square"></i> Dodge Slams</div>
+                        <div class="detail-item"><i class="fas fa-link-slash"></i> Break Tethers</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="step fade-up stagger-5">
+                <div class="step-number">5</div>
+                <div class="step-content">
+                    <h3>Claim & Compete</h3>
+                    <p>Boss drops 1–2 Echoing Cores. But every 5 minutes, your Riftblade pings your rough location to the entire server — world + coordinates rounded to 250 blocks. Defend your loot or hunt others.</p>
+                    <div class="step-details">
+                        <div class="detail-item"><i class="fas fa-gem"></i> 1-2 Echoing Cores</div>
+                        <div class="detail-item"><i class="fas fa-satellite"></i> 5-min Ping</div>
+                        <div class="detail-item"><i class="fas fa-crosshairs"></i> 250 Block Radius</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Installation -->
+    <section class="installation section" id="installation">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-badge">Get Started</span>
+                <h2 class="section-title font-minecraft">Installation</h2>
+                <p class="section-subtitle">Requires Paper 1.21.4+ (build 26.3+) and Java 21. Works with all major permission plugins.</p>
+            </div>
+
+            <div class="install-tabs">
+                <button class="tab-btn active" data-tab="manual">Manual Install</button>
+                <button class="tab-btn" data-tab="plugin-manager">Plugin Manager</button>
+                <button class="tab-btn" data-tab="docker">Docker</button>
+            </div>
+
+            <div class="tab-panel active" id="tab-manual">
+                <div class="code-block">
+                    <div class="code-header">
+                        <div class="dots">
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                        </div>
+                        <span class="filename">server/plugins/</span>
+                    </div>
+                    <div class="code-content">
+                        <div class="code-line"><span class="comment"># 1. Download the latest release</span></div>
+                        <div class="code-line"><span class="keyword">wget</span> https://github.com/your-repo/HollowRift/releases/latest/download/HollowRift-1.0.0.jar</div>
+                        <div class="code-line"></div>
+                        <div class="code-line"><span class="comment"># 2. Place in plugins folder</span></div>
+                        <div class="code-line"><span class="keyword">mv</span> HollowRift-1.0.0.jar <span class="string">/path/to/server/plugins/</span></div>
+                        <div class="code-line"></div>
+                        <div class="code-line"><span class="comment"># 3. Start/restart server</span></div>
+                        <div class="code-line"><span class="keyword">./start.sh</span></div>
+                        <div class="code-line"></div>
+                        <div class="code-line"><span class="comment"># 4. Verify in console</span></div>
+                        <div class="code-line"><span class="string">[HollowRift] HollowRift has been enabled!</span></div>
+                    </div>
+                </div>
+
+                <div class="install-steps">
+                    <div class="card install-step">
+                        <div class="step-icon"><i class="fas fa-download"></i></div>
+                        <h4>Requirements</h4>
+                        <p>Paper 1.21.4+ (26.3+), Java 21, ProtocolLib not required</p>
+                    </div>
+                    <div class="card install-step">
+                        <div class="step-icon"><i class="fas fa-plug"></i></div>
+                        <h4>Permissions</h4>
+                        <p>Uses <code>hollowrift.admin</code>, <code>hollowrift.give</code>, <code>hollowrift.spawnboss</code> — default: op</p>
+                    </div>
+                    <div class="card install-step">
+                        <div class="step-icon"><i class="fas fa-cogs"></i></div>
+                        <h4>Config</h4>
+                        <p>No config.yml needed — all features work out of the box. Modify via permission plugin.</p>
+                    </div>
+                    <div class="card install-step">
+                        <div class="step-icon"><i class="fas fa-check-circle"></i></div>
+                        <h4>Verify</h4>
+                        <p>Run <code>/hollowrift give core</code> to test items, <code>/hollowrift spawnboss</code> for boss</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-panel" id="tab-plugin-manager">
+                <div class="code-block">
+                    <div class="code-header">
+                        <div class="dots">
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                        </div>
+                        <span class="filename">PaperMC / PufferPanel / Pterodactyl</span>
+                    </div>
+                    <div class="code-content">
+                        <div class="code-line"><span class="comment"># Via PaperMC Web UI or Panel</span></div>
+                        <div class="code-line"><span class="keyword">1.</span> Open Plugins tab</div>
+                        <div class="code-line"><span class="keyword">2.</span> Click "Install Plugin" or "Add Plugin"</div>
+                        <div class="code-line"><span class="keyword">3.</span> Search: <span class="string">"HollowRift"</span></div>
+                        <div class="code-line"><span class="keyword">4.</span> Select version <span class="string">1.0.0</span> for Paper 1.21.4</div>
+                        <div class="code-line"><span class="keyword">5.</span> Click Install → Restart Server</div>
+                    </div>
+                </div>
+                <p style="margin-top: 20px; color: var(--text-secondary);">Available on Modrinth, Hangar, and SpigotMC for one-click installation via supported panels.</p>
+            </div>
+
+            <div class="tab-panel" id="tab-docker">
+                <div class="code-block">
+                    <div class="code-header">
+                        <div class="dots">
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                        </div>
+                        <span class="filename">docker-compose.yml</span>
+                    </div>
+                    <div class="code-content">
+<div class="code-line"><span class="keyword">version:</span> <span class="string">'3.8'</span></div>
+<div class="code-line"></div>
+<div class="code-line"><span class="keyword">services:</span></div>
+<div class="code-line">  <span class="keyword">paper:</span></div>
+<div class="code-line">    <span class="keyword">image:</span> <span class="string">ghcr.io/papermc/paper:1.21.4</span></div>
+<div class="code-line">    <span class="keyword">volumes:</span></div>
+<div class="code-line">      - <span class="string">./plugins:/plugins</span></div>
+<div class="code-line">      - <span class="string">./world:/world</span></div>
+<div class="code-line">      - <span class="string">./HollowRift-1.0.0.jar:/plugins/HollowRift.jar</span></div>
+<div class="code-line">    <span class="keyword">environment:</span></div>
+<div class="code-line">      - <span class="string">MEMORY=4G</span></div>
+<div class="code-line">      - <span class="string">TZ=UTC</span></div>
+<div class="code-line">    <span class="keyword">ports:</span></div>
+<div class="code-line">      - <span class="string">"25565:25565"</span></div>
+<div class="code-line">    <span class="keyword">restart:</span> <span class="string">unless-stopped</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why Choose -->
+    <section class="why-choose section" id="why-choose">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-badge">For Server Owners</span>
+                <h2 class="section-title font-minecraft">Why HollowRift?</h2>
+                <p class="section-subtitle">Built for competitive SMPs that want meaningful progression, contested objectives, and a boss that demands coordination — not just gear checks.</p>
+            </div>
+            
+            <div class="grid grid-2">
+                <div class="card reason-card fade-up stagger-1">
+                    <div class="reason-icon competitive"><i class="fas fa-trophy"></i></div>
+                    <div class="reason-content">
+                        <h3>True Competition</h3>
+                        <p>The 5-minute Riftblade ping creates natural conflict cycles. Players can't hide forever — every 5 minutes the server knows roughly where the blade is. This drives PvP, alliances, betrayals, and base defense.</p>
+                    </div>
+                </div>
+                <div class="card reason-card fade-up stagger-2">
+                    <div class="reason-icon custom"><i class="fas fa-gem"></i></div>
+                    <div class="reason-content">
+                        <h3>Items That Matter</h3>
+                        <p>Echoing Core and Riftblade use PersistentDataContainer — they survive server updates, can't be duplicated by vanilla mechanics, and are identifiable by other plugins. The Riftblade isn't just a sword; it's a progression milestone.</p>
+                    </div>
+                </div>
+                <div class="card reason-card fade-up stagger-3">
+                    <div class="reason-icon boss"><i class="fas fa-skull"></i></div>
+                    <div class="reason-content">
+                        <h3>A Boss That Fights Back</h3>
+                        <p>Three distinct phases force coordination: break shield nodes together, dodge slams as a group, break tethers by spreading out. No single player can cheese it — it requires communication and role assignment.</p>
+                    </div>
+                </div>
+                <div class="card reason-card fade-up stagger-4">
+                    <div class="reason-icon tech"><i class="fas fa-code"></i></div>
+                    <div class="reason-content">
+                        <h3>Modern, Stable Code</h3>
+                        <p>Paper 1.21.4+, Java 21, Adventure API, PDC, BukkitRunnables. No NMS, no reflection, no fragile version-dependent code. Shaded JAR with zero external runtime dependencies. Clean modular architecture.</p>
+                    </div>
+                </div>
+                <div class="card reason-card fade-up stagger-5">
+                    <div class="reason-icon active"><i class="fas fa-bolt"></i></div>
+                    <div class="reason-content">
+                        <h3>Emergent Gameplay</h3>
+                        <p>No quests, no guided objectives — players create their own stories. Race to build the first altar. Form teams to break the shield. Betray allies for the core drop. Hunt the pinged Riftblade holder. The plugin provides tools; players write the narrative.</p>
+                    </div>
+                </div>
+                <div class="card reason-card fade-up stagger-6">
+                    <div class="reason-icon community"><i class="fas fa-users"></i></div>
+                    <div class="reason-content">
+                        <h3>Extensible & Open</h3>
+                        <p>MIT licensed. Modular structure (items/, combat/, boss/, altar/, commands/) makes it easy to disable features, add custom drops, or hook into events. PDC keys are documented for integration with economy, leaderboard, or logging plugins.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Commands Reference -->
+    <section class="commands section" id="commands">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-badge">Reference</span>
+                <h2 class="section-title font-minecraft">Commands & Permissions</h2>
+                <p class="section-subtitle">All admin commands with tab completion. Permissions default to OP but work with any permission plugin.</p>
+            </div>
+            
+            <table class="command-table">
+                <thead>
+                    <tr>
+                        <th>Command</th>
+                        <th>Description</th>
+                        <th>Permission</th>
+                        <th>Aliases</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>/hollowrift give core [player]</code></td>
+                        <td>Give an Echoing Core to yourself or target player</td>
+                        <td><span class="permission-badge">hollowrift.give</span></td>
+                        <td><code>/hr give core</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>/hollowrift give blade [player]</code></td>
+                        <td>Give a Riftblade to yourself or target player</td>
+                        <td><span class="permission-badge">hollowrift.give</span></td>
+                        <td><code>/hr give blade</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>/hollowrift spawnboss [player]</code></td>
+                        <td>Spawn The Hollow Warden at player's location (or yours)</td>
+                        <td><span class="permission-badge">hollowrift.spawnboss</span></td>
+                        <td><code>/hr spawnboss</code></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div style="margin-top: 32px; padding: 24px; background: var(--mc-card); border: 1px solid var(--mc-border); border-radius: 8px;">
+                <h3 style="font-family: 'Press Start 2P', cursive; font-size: 14px; margin-bottom: 16px; color: var(--mc-gold);">Permission Defaults</h3>
+                <div class="grid grid-3" style="margin-top: 16px;">
+                    <div class="card" style="text-align: center;">
+                        <h4 style="color: var(--mc-gold); margin-bottom: 8px;">hollowrift.admin</h4>
+                        <p style="font-size: 13px; color: var(--text-secondary);">All admin commands (give, spawnboss)</p>
+                    </div>
+                    <div class="card" style="text-align: center;">
+                        <h4 style="color: var(--mc-aqua); margin-bottom: 8px;">hollowrift.give</h4>
+                        <p style="font-size: 13px; color: var(--text-secondary);">Give custom items only</p>
+                    </div>
+                    <div class="card" style="text-align: center;">
+                        <h4 style="color: var(--mc-dark-purple); margin-bottom: 8px;">hollowrift.spawnboss</h4>
+                        <p style="font-size: 13px; color: var(--text-secondary);">Spawn boss only</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Download CTA -->
+    <section class="section" id="download" style="background: linear-gradient(135deg, var(--mc-dark-purple) 0%, var(--mc-aqua) 100%); text-align: center; padding: 100px 24px;">
+        <div class="container">
+            <h2 class="section-title font-minecraft" style="color: var(--mc-dark); -webkit-text-fill-color: var(--mc-dark);">Ready to Transform Your SMP?</h2>
+            <p style="font-size: 20px; color: rgba(13, 13, 26, 0.8); margin-bottom: 32px; max-width: 600px; margin-left: auto; margin-right: auto;">
+                Join hundreds of servers running HollowRift. Download the latest build and start your competitive season today.
+            </p>
+            <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
+                <a href="#" class="btn btn-download" style="font-size: 16px; padding: 18px 40px;">
+                    <i class="fas fa-download"></i> Download v1.0.0
+                </a>
+                <a href="#" class="btn btn-secondary" style="font-size: 16px; padding: 18px 40px; border-color: var(--mc-dark); color: var(--mc-dark);">
+                    <i class="fab fa-github"></i> View Source
+                </a>
+            </div>
+            <p style="margin-top: 24px; color: rgba(13, 13, 26, 0.6); font-size: 14px;">
+                Requires Paper 1.21.4+ • Java 21 • <a href="#" style="color: var(--mc-gold); text-decoration: none;">MIT License</a>
+            </p>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <a href="#" class="logo">
+                        <div class="logo-icon"><i class="fas fa-skull-crossbones"></i></div>
+                        <span class="logo-text">HollowRift</span>
+                    </a>
+                    <p>A competitive survival SMP plugin for Paper 1.21.4+. Forge the Riftblade, summon the Hollow Warden, and fight for dominance.</p>
+                    <div class="social-links" style="margin-top: 20px;">
+                        <a href="#" aria-label="GitHub"><i class="fab fa-github"></i></a>
+                        <a href="#" aria-label="Discord"><i class="fab fa-discord"></i></a>
+                        <a href="#" aria-label="Modrinth"><i class="fas fa-cube"></i></a>
+                        <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                    </div>
+                </div>
+                
+                <div class="footer-links">
+                    <h4>Resources</h4>
+                    <ul>
+                        <li><a href="#features">Features</a></li>
+                        <li><a href="#how-it-works">Gameplay Guide</a></li>
+                        <li><a href="#installation">Installation</a></li>
+                        <li><a href="#commands">Commands</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-links">
+                    <h4>Links</h4>
+                    <ul>
+                        <li><a href="#">Modrinth Page</a></li>
+                        <li><a href="#">GitHub Repository</a></li>
+                        <li><a href="#">Issue Tracker</a></li>
+                        <li><a href="#">Changelog</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-links">
+                    <h4>Requirements</h4>
+                    <ul>
+                        <li>Paper 1.21.4+ (26.3+)</li>
+                        <li>Java 21</li>
+                        <li>No ProtocolLib</li>
+                        <li>No Database</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2025 HollowRift. MIT Licensed. Built for the competitive SMP community.</p>
+                <div class="social-links">
+                    <a href="#" aria-label="GitHub"><i class="fab fa-github"></i></a>
+                    <a href="#" aria-label="Discord"><i class="fab fa-discord"></i></a>
+                    <a href="#" aria-label="Modrinth"><i class="fas fa-cube"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Navbar scroll effect
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // Mobile menu toggle
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const navLinks = document.getElementById('navLinks');
+        mobileMenuBtn.addEventListener('click', () => {
+            navLinks.classList.toggle('active');
+            mobileMenuBtn.innerHTML = navLinks.classList.contains('active') 
+                ? '<i class="fas fa-times"></i>' 
+                : '<i class="fas fa-bars"></i>';
+        });
+
+        // Close mobile menu on link click
+        navLinks.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+                navLinks.classList.remove('active');
+                mobileMenuBtn.innerHTML = '<i class="fas fa-bars"></i>';
+            });
+        });
+
+        // Tab switching
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabPanels = document.querySelectorAll('.tab-panel');
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tab = btn.dataset.tab;
+                tabBtns.forEach(b => b.classList.remove('active'));
+                tabPanels.forEach(p => p.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById(`tab-${tab}`).classList.add('active');
+            });
+        });
+
+        // Scroll animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.fade-up').forEach(el => {
+            observer.observe(el);
+        });
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+
+        // Background canvas animation
+        const canvas = document.getElementById('bgCanvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        const particleCount = 80;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+            reset() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2 + 0.5;
+                this.speedX = (Math.random() - 0.5) * 0.3;
+                this.speedY = (Math.random() - 0.5) * 0.3;
+                this.opacity = Math.random() * 0.5 + 0.1;
+                this.color = Math.random() > 0.5 ? '#ffd700' : '#00ffff';
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) {
+                    this.reset();
+                }
+            }
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.globalAlpha = this.opacity;
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+        }
+
+        function initParticles() {
+            particles = [];
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            initParticles();
+        });
+
+        resizeCanvas();
+        initParticles();
+        animate();
+
+        // Hero cards parallax on mouse move
+        const heroVisual = document.querySelector('.hero-visual');
+        if (heroVisual) {
+            document.addEventListener('mousemove', (e) => {
+                const cards = heroVisual.querySelectorAll('.floating-card');
+                const x = (e.clientX / window.innerWidth - 0.5) * 20;
+                const y = (e.clientY / window.innerHeight - 0.5) * 20;
+                cards.forEach((card, i) => {
+                    const factor = (i + 1) * 0.5;
+                    card.style.transform = `translate(${x * factor}px, ${y * factor}px)`;
+                });
+            });
+        }
+    </script>
+</body>
+</html>
