@@ -88,6 +88,9 @@ public class RiftbladeListener implements Listener {
         if (data.stackCount >= RESONANCE_THRESHOLD) {
             triggerResonance(player, target);
             data.stackCount = 0; // Reset after proc
+            
+            // Apply armor-piercing damage through event (adds to existing damage)
+            event.setDamage(event.getDamage() + 6.0);
         }
     }
 
@@ -102,24 +105,10 @@ public class RiftbladeListener implements Listener {
         loc.getWorld().playSound(loc, Sound.ENTITY_WARDEN_SONIC_BOOM, 1.0f, 1.0f);
         loc.getWorld().spawnParticle(Particle.SONIC_BOOM, loc, 1);
 
-        // Armor-piercing damage: 6.0 extra damage + knockback
-        // Use direct health reduction to bypass armor, but clamp at 0.1
-        double currentHealth = target.getHealth();
-        double newHealth = Math.max(0.1, currentHealth - 6.0);
-        
-        // Check if this would kill the target
-        boolean wouldKill = newHealth <= 0.1;
-        target.setHealth(newHealth);
-        
-        // Apply knockback away from player (even if dead, for effect)
+        // Apply knockback away from player
         Vector knockback = target.getLocation().toVector().subtract(player.getLocation().toVector()).normalize().multiply(0.8);
         knockback.setY(0.4);
         target.setVelocity(target.getVelocity().add(knockback));
-
-        // If this would kill, apply tiny damage for kill credit/loot
-        if (wouldKill && target.isValid() && !target.isDead()) {
-            target.damage(0.1, player);
-        }
 
         // Visual feedback to player
         player.sendActionBar(Component.text("⚡ Resonance Boom!", NamedTextColor.AQUA, TextDecoration.BOLD));
@@ -132,7 +121,6 @@ public class RiftbladeListener implements Listener {
         // Only main hand right-click (not off-hand, not block interaction)
         if (event.getHand() != EquipmentSlot.HAND) return;
         if (event.getAction().name().startsWith("LEFT_")) return;
-        if (event.getAction().name().startsWith("RIGHT_CLICK_BLOCK")) return; // Allow RIGHT_CLICK_AIR only
 
         Player player = event.getPlayer();
         ItemStack mainHand = player.getInventory().getItemInMainHand();
@@ -177,65 +165,66 @@ public class RiftbladeListener implements Listener {
     private void executePhaseSlash(Player player) {
         // Safety check
         if (player == null || !player.isValid() || !player.isOnline()) return;
-        
+
         try {
             Location start = player.getLocation().clone();
             Vector direction = player.getLocation().getDirection().normalize();
-            
+
             plugin.getLogger().info("Phase Slash executed by " + player.getName() + " direction: " + direction);
-            
+
             // If looking straight up/down, don't dash
             if (Math.abs(direction.getY()) > 0.9) {
                 player.sendActionBar(Component.text("❌ Can't dash straight up/down!", NamedTextColor.RED));
                 return;
             }
-            
+
             // Calculate end position (8 blocks forward)
             Location end = start.clone().add(direction.clone().multiply(PHASE_SLASH_DASH_DISTANCE));
 
             // Safe vertical boost: find safe Y at destination
             end = findSafeDestination(start, end);
 
-            // Dash parameters: 8 blocks over 10 ticks = 0.8 blocks/tick (capped at 1.0)
+            // Dash using teleport over 10 ticks (0.8 blocks/tick)
             final int dashTicks = 10;
-            final double speed = Math.min(PHASE_SLASH_DASH_DISTANCE / 10.0, 1.0); // Cap at 1.0 blocks/tick
-            final Vector dashVelocity = direction.clone().multiply(speed);
-            dashVelocity.setY(0.2); // Small upward boost
-            
-            plugin.getLogger().info("Phase Slash dash velocity: " + dashVelocity + " speed: " + speed);
-            
+            final Location startLoc = player.getLocation().clone();
+            final Vector lookDir = direction.clone(); // player's look direction
+            final double speed = PHASE_SLASH_DASH_DISTANCE / dashTicks; // 0.8 blocks/tick
+
+            plugin.getLogger().info("Phase Slash dash: speed=" + speed + " direction=" + lookDir);
+
             // Cancel any existing velocity
             player.setVelocity(new Vector(0, 0, 0));
             player.setFallDistance(0);
 
-            // Dash over multiple ticks using a runnable
-            final int[] ticks = {0};
-            final Vector finalDashVelocity = dashVelocity.clone();
-            
-            BukkitRunnable dashTask = new BukkitRunnable() {
+            // Teleport dash over multiple ticks
+            new BukkitRunnable() {
+                int ticks = 0;
                 @Override
                 public void run() {
                     try {
-                        // Safety checks
-                        if (player == null || !player.isValid() || !player.isOnline() || ticks[0] >= 10) {
-                            plugin.getLogger().info("Phase Slash dash ended after " + ticks[0] + " ticks");
+                        if (!player.isValid() || !player.isOnline() || ticks >= dashTicks) {
                             cancel();
                             return;
                         }
-                        
-                        // Apply velocity
-                        plugin.getLogger().info("Applying dash velocity tick " + ticks[0] + ": " + finalDashVelocity);
-                        player.setVelocity(finalDashVelocity);
+
+                        // Calculate position for this tick
+                        double distance = speed * ticks;
+                        Location newLoc = startLoc.clone().add(lookDir.clone().multiply(distance));
+                        newLoc.setY(newLoc.getY() + 0.2); // slight upward arc
+
+                        // Teleport player
+                        player.teleport(newLoc);
                         player.setFallDistance(0);
-                        
-                        ticks[0]++;
+
+                        plugin.getLogger().info("Phase Slash teleport tick " + ticks + " to " + newLoc);
+
+                        ticks++;
                     } catch (Exception e) {
                         cancel();
                         plugin.getLogger().warning("Phase Slash dash error: " + e.getMessage());
                     }
                 }
-            };
-            dashTask.runTaskTimer(plugin, 0L, 1L); // Every tick
+            }.runTaskTimer(plugin, 0L, 1L); // Every tick
 
             // Spawn SCULK_SOUL particles along path
             spawnPathParticles(start, end);
@@ -251,7 +240,7 @@ public class RiftbladeListener implements Listener {
             end.getWorld().playSound(end, Sound.ENTITY_ENDERMAN_TELEPORT, 1.0f, 0.8f);
 
             player.sendActionBar(Component.text("⚔ Phase Slash!", NamedTextColor.DARK_AQUA, TextDecoration.BOLD));
-            
+
         } catch (Exception e) {
             plugin.getLogger().severe("Phase Slash error: " + e.getMessage());
             e.printStackTrace();
