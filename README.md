@@ -124,8 +124,8 @@ Also available via Modrinth, Hangar, and SpigotMC for one-click install.
 ## 📦 Downloads
 
 - **Modrinth**: [modrinth.com/plugin/hollowrift](https://modrinth.com/plugin/hollowrift)
-- **GitHub Releases**: [github.com/your-repo/HollowRift/releases](https://github.com/your-repo/HollowRift/releases)
-- **Source Code**: [github.com/your-repo/HollowRift](https://github.com/your-repo/HollowRift)
+- **GitHub Releases**: [github.com/Justagoodpizza/HollowRift/releases](https://github.com/Justagoodpizza/HollowRift/releases)
+- **Source Code**: [github.com/Justagoodpizza/HollowRift](https://github.com/Justagoodpizza/HollowRift)
 
 ---
 
