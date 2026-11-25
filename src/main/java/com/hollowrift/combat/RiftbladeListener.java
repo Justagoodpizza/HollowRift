@@ -175,53 +175,81 @@ public class RiftbladeListener implements Listener {
     }
 
     private void executePhaseSlash(Player player) {
-        Location start = player.getLocation().clone();
-        Vector direction = player.getLocation().getDirection().normalize();
+        // Safety check
+        if (player == null || !player.isValid() || !player.isOnline()) return;
         
-        // Calculate end position (8 blocks forward)
-        Location end = start.clone().add(direction.clone().multiply(PHASE_SLASH_DASH_DISTANCE));
-
-        // Safe vertical boost: find safe Y at destination
-        end = findSafeDestination(start, end);
-
-        // Dash parameters: 8 blocks over 10 ticks = 0.8 blocks/tick
-        final int dashTicks = 10;
-        final double speed = PHASE_SLASH_DASH_DISTANCE / dashTicks; // 0.8 blocks/tick
-        final Vector dashVelocity = direction.clone().multiply(speed);
-        dashVelocity.setY(0.3); // Small upward boost
-
-        // Dash over multiple ticks using a runnable
-        new BukkitRunnable() {
-            int ticks = 0;
-            @Override
-            public void run() {
-                if (!player.isValid() || !player.isOnline() || ticks >= dashTicks) {
-                    cancel();
-                    return;
-                }
-                
-                // Apply velocity each tick
-                player.setVelocity(dashVelocity);
-                player.setFallDistance(0); // Prevent fall damage
-                
-                ticks++;
+        try {
+            Location start = player.getLocation().clone();
+            Vector direction = player.getLocation().getDirection().normalize();
+            
+            // If looking straight up/down, don't dash
+            if (Math.abs(direction.getY()) > 0.9) {
+                player.sendActionBar(Component.text("❌ Can't dash straight up/down!", NamedTextColor.RED));
+                return;
             }
-        }.runTaskTimer(plugin, 0L, 1L); // Every tick
+            
+            // Calculate end position (8 blocks forward)
+            Location end = start.clone().add(direction.clone().multiply(PHASE_SLASH_DASH_DISTANCE));
 
-        // Spawn SCULK_SOUL particles along path
-        spawnPathParticles(start, end);
+            // Safe vertical boost: find safe Y at destination
+            end = findSafeDestination(start, end);
 
-        // Damage enemies along path
-        damageEnemiesAlongPath(player, start, end, direction);
+            // Dash parameters: 8 blocks over 10 ticks = 0.8 blocks/tick (capped at 1.0)
+            final int dashTicks = 10;
+            final double speed = Math.min(PHASE_SLASH_DASH_DISTANCE / 10.0, 1.0); // Cap at 1.0 blocks/tick
+            final Vector dashVelocity = direction.clone().multiply(speed);
+            dashVelocity.setY(0.2); // Small upward boost
+            
+            // Cancel any existing velocity
+            player.setVelocity(new Vector(0, 0, 0));
+            player.setFallDistance(0);
 
-        // Give Speed II for 2 seconds
-        player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, SPEED_DURATION_TICKS, 1, false, false, true));
+            // Dash over multiple ticks using a runnable
+            final int[] ticks = {0};
+            final Vector finalDashVelocity = dashVelocity.clone();
+            
+            BukkitRunnable dashTask = new BukkitRunnable() {
+                @Override
+                public void run() {
+                    try {
+                        // Safety checks
+                        if (player == null || !player.isValid() || !player.isOnline() || ticks[0] >= 10) {
+                            cancel();
+                            return;
+                        }
+                        
+                        // Apply velocity
+                        player.setVelocity(finalDashVelocity);
+                        player.setFallDistance(0);
+                        
+                        ticks[0]++;
+                    } catch (Exception e) {
+                        cancel();
+                        plugin.getLogger().warning("Phase Slash dash error: " + e.getMessage());
+                    }
+                }
+            };
+            dashTask.runTaskTimer(plugin, 0L, 1L); // Every tick
 
-        // Sound feedback
-        start.getWorld().playSound(start, Sound.ENTITY_ENDERMAN_TELEPORT, 1.0f, 1.2f);
-        end.getWorld().playSound(end, Sound.ENTITY_ENDERMAN_TELEPORT, 1.0f, 0.8f);
+            // Spawn SCULK_SOUL particles along path
+            spawnPathParticles(start, end);
 
-        player.sendActionBar(Component.text("⚔ Phase Slash!", NamedTextColor.DARK_AQUA, TextDecoration.BOLD));
+            // Damage enemies along path
+            damageEnemiesAlongPath(player, start, end, direction);
+
+            // Give Speed II for 2 seconds
+            player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, SPEED_DURATION_TICKS, 1, false, false, true));
+
+            // Sound feedback
+            start.getWorld().playSound(start, Sound.ENTITY_ENDERMAN_TELEPORT, 1.0f, 1.2f);
+            end.getWorld().playSound(end, Sound.ENTITY_ENDERMAN_TELEPORT, 1.0f, 0.8f);
+
+            player.sendActionBar(Component.text("⚔ Phase Slash!", NamedTextColor.DARK_AQUA, TextDecoration.BOLD));
+            
+        } catch (Exception e) {
+            plugin.getLogger().severe("Phase Slash error: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     /**
