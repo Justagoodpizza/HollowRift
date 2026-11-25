@@ -21,17 +21,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: List repo files
-        run: ls -la
-
       - name: Prepare site files
         run: |
           mkdir -p _site
-          if [ -f "index.html" ]; then cp index.html _site/; echo "Copied index.html"; else echo "ERROR: index.html not found"; exit 1; fi
-          if [ -f "HollowRift-1.0.0.jar" ]; then cp HollowRift-1.0.0.jar _site/; echo "Copied JAR"; else echo "ERROR: JAR not found"; exit 1; fi
-
-      - name: Verify _site contents
-        run: ls -la _site/
+          cp index.html _site/
 
       - name: Upload site artifact
         uses: actions/upload-artifact@v4
